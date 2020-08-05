@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript"  src="js/jquery-3.3.1.min.js"></script>
+
+
+    <script>
+        $.ajaxSetup({
+            //data:{"name":sessionStorage.getItem("token")}
+            headers: {
+                'token': sessionStorage.getItem("login_token")
+            },
+            //数据加载完成后
+            complete:function(a,b,c){
+                var rs=a.responseJSON;
+
+                if(rs.code==1000){
+                    alert(rs.message);
+                    location.href="login.html"
+                }
+                //debugger
+            }
+            /* beforeSend: function(xhr) {
+                 debugger;
+                 xhr.setRequestHeader("token:'"+sessionStorage.getItem("login_token")+"'");
+             }*/
+        });
+
+        $(function () {
+            var href = location.href;
+
+            var id1 = href.substring(35);
+            var strings = id1.split(",");
+            ids = strings;
+
+
+            //初始化收货地址
+            inintAddRess();
+            initProductCarInfo();
+
+
+        })
+
+        function inintAddRess() {
+            $.post({
+                url:"http://localhost:8083/areaController/findAreaList",
+                dataType:"json",
+                success:function (rs) {
+
+                    if(rs.code==200){
+                        var addressArr=rs.data;
+                        var htmls="";
+                        var radioHtml=""
+                        for (var i = 0; i <addressArr.length ; i++) {
+                            if(addressArr[i].ischeck==true){
+                                radioHtml='<td><input type="radio" checked name="addressRadio" value="'+addressArr[i].id+'"/></td>'
+                            }else{
+                                radioHtml='<td><input type="radio"  name="addressRadio" value="'+addressArr[i].id+'"/></td>'
+                            }
+                            htmls+=' <tr>\n' +
+                                radioHtml+
+                                '          <td>'+addressArr[i].name+'</td>\n' +
+                                '          <td>'+addressArr[i].iphone+'</td>\n' +
+                                '          <td>'+addressArr[i].address+'</td>\n' +
+                                '        </tr>';
+                        }
+                        //将拼好的html 填充到div中
+                        $("#addressDiv").html(htmls);
+                    }else{
+                        alert(rs.message);
+                    }
+
+                },error:function () {
+                    alert("获取收货地址异常");
+                }
+            });
+        }
+
+        var htmls;
+        var countshuliang=0;
+
+        function initProductCarInfo() {
+
+            $.post({
+                url: "http://localhost:8083/cartController/findUserCartList",
+                dataType: "json",
+                async: false,
+                success: function (rs) {
+                    //
+                    if (rs.code == 200) {
+                        var htmls = "";
+                        var proList = rs.data;//得到商品数组
+                        //遍历所有数据
+
+
+
+                        for (var i = 0; i < proList.length; i++) {
+                            var proStr = proList[i];//得到的是json字符串
+                            //将json字符串 转为json对象
+                            var proJson = JSON.parse(proStr);
+
+                            for (var j = 0; j <ids.length ; j++) {
+
+
+
+
+
+
+                            if (ids[j]==proJson.id) {
+
+
+                                htmls += ' <tr>\n' +
+                                    '          <td>' + proJson.name + '</td>\n' +
+                                    '          <td><img width="100" height="100" src="' + proJson.imgPath + '"/></td>\n' +
+                                    '          <td>' + proJson.price + '</td>\n' +
+                                    '          <td>' + proJson.count + '</td>\n' +
+                                    '          <td style="color: red ;margin-left: 300px">' + proJson.money + '</td>\n' +
+                                    '      </tr>';
+
+                            }
+                            }
+
+
+                        }
+
+                        //将拼好html填充到指定div中
+                        $("#productInfo").html(htmls);
+
+                    }
+
+                }, error: function () {
+                    alert("查询购物车数据异常");
+                }
+            });
+        }
+    </script>
+
+</head>
+<body >
+<center>
+<div>
+    <h1>收货地址</h1>
+    <table border="1" id="addressDiv" cellpadding="0" cellspacing="0" width="500" >
+
+    </table>
+</div>
+
+<div>
+    <h1>支付方式</h1>
+    <input type="radio" name="payType" /> 在线支付
+    <input type="radio" name="payType" />货到付款
+</div>
+    <h1>订单详情</h1>
+
+    <table border="1" cellpadding="0" cellspacing="0" width="500" id="productInfo">
+
+    </table>
+
+
+
+<button>提交订单</button>
+</center>
+</body>
+</html>
